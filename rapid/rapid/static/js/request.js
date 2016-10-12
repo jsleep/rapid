@@ -10,6 +10,7 @@ Request = {
 };
 
 var geoViews = {};
+var features = {};
 
 var geoViewStyle = {
         weight: 2,
@@ -45,10 +46,19 @@ var refreshGeoViews = function () {
             showIntersectingFeatures.id = uid + '_show';
             showIntersectingFeatures.style.float = 'right';
             showIntersectingFeatures.className = 'btn btn-default btn-xs';
+            showIntersectingFeatures.add = true;
             showIntersectingFeatures.onclick = (function(e) {
                 var id = e.currentTarget.id.replace('_show', '');
-                e.currentTarget.disabled = true;
-                return getFeaturesInGeoview(id);
+                var button = $('#'+id + "_show");
+                if(e.currentTarget.add == true) {
+                    getFeaturesInGeoview(id);
+                    button.text('Hide All Data');
+                }
+                else {
+                    map.removeLayer(features[id]);
+                    button.text('Show All Data');
+                }
+                e.currentTarget.add = !e.currentTarget.add;
             });
             showIntersectingFeatures.value = 'Get Features';
             var buttonText = document.createTextNode('Show All Data');
@@ -97,15 +107,23 @@ function ajaxCall(address, callback) {
 
 function getFeaturesInGeoview(uid) {
     console.log(uid);
-    var response = $.ajax({
-       url: Request.TO_GEOVIEW + uid + '/features/',
-       dataType: 'json',
-       success: function (data) {
-           L.geoJson(data, {
-               onEachFeature: constructPopup
-           }).addTo(map);
-       }
-    })
+    if(features[uid]) {
+        map.addLayer(features[uid]);
+        map.fitBounds(features[uid]);
+    }
+    else {
+        $.ajax({
+           url: Request.TO_GEOVIEW + uid + '/features/',
+           dataType: 'json',
+           success: function (data) {
+               features[uid] = L.geoJson(data, {
+                   onEachFeature: constructPopup
+               }).addTo(map);
+               map.fitBounds(features[uid]);
+           }
+        })
+    }
+    
 }
 
 function constructPopup(feature, layer) {
