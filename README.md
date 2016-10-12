@@ -1,3 +1,3 @@
 # rapid
 
-DoT Research Project done at Cal Poly
+DoT Research Project done at Cal Poly.
