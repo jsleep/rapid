@@ -117,6 +117,13 @@
 
             <br/>
 
+            <ul style='list-style-type: none; float: left; font-size: 11px; padding: 0 15px; width: 100%;'>
+                <li><h4>Filter</h4></li>
+                <li><input type="text" id ="filterInput" style = 'width: 100%;'></li>
+            </ul>
+
+            <br/>
+
             <ul id='layerList' style='list-style-type: none; float: left; font-size: 11px; padding: 0 15px; width: 100%;'>
                 <li><h4>Available Layers</h4></li>
             </ul>
@@ -191,6 +198,14 @@
 
         // var geoViews = {};
 
+    </script>
+
+    <script>
+        var filterString = "";
+        $( "#filterInput" ).change(function() {
+          //alert( "filter changed" );
+          filterString =  $( "#filterInput" ).val();
+        });
     </script>
 
     <script>

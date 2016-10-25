@@ -10,7 +10,8 @@ Request = {
 };
 
 var geoViews = {};
-var features = {};
+var geoViewData = {};
+var displayedGeoViewData = {};
 
 var geoViewStyle = {
         weight: 2,
@@ -55,7 +56,7 @@ var refreshGeoViews = function () {
                     button.text('Hide All Data');
                 }
                 else {
-                    map.removeLayer(features[id]);
+                    map.removeLayer(displayedGeoViewData[id]);
                     button.text('Show All Data');
                 }
                 e.currentTarget.add = !e.currentTarget.add;
@@ -66,6 +67,8 @@ var refreshGeoViews = function () {
             geoViewListElement.appendChild(geoViewListElementDiv).appendChild(descriptor);
             geoViewListElement.appendChild(geoViewListElementDiv).appendChild(showIntersectingFeatures);
 
+            //layer list under geoview - doesn't seem like it's currently working
+            //let's change this to populate the layer list when show all data is selected
             var ul = document.createElement("UL");
             ul.id = uid + '_layers';
 
@@ -78,6 +81,7 @@ var refreshGeoViews = function () {
                 ul.appendChild(li);
             }
             geoViewListElement.appendChild(ul);
+
             geoViewList.appendChild(geoViewListElement);
         }
     }
@@ -107,23 +111,128 @@ function ajaxCall(address, callback) {
 
 function getFeaturesInGeoview(uid) {
     console.log(uid);
-    if(features[uid]) {
-        map.addLayer(features[uid]);
-        map.fitBounds(features[uid]);
+    if(geoViewData[uid]) {
+        displayData(uid);
     }
     else {
         $.ajax({
            url: Request.TO_GEOVIEW + uid + '/features/',
            dataType: 'json',
            success: function (data) {
-               features[uid] = L.geoJson(data, {
-                   onEachFeature: constructPopup
-               }).addTo(map);
-               map.fitBounds(features[uid]);
+               geoViewData[uid] = data;
+               displayData(uid);
            }
         })
     }
     
+}
+
+function displayData(uid) {
+   var displayData = jQuery.extend(true, {}, geoViewData[uid]);
+   displayData.features = filterFeatures(displayData);
+   displayedGeoViewData[uid] = L.geoJson(displayData, {
+       onEachFeature: constructPopup
+   }).addTo(map);
+   map.fitBounds(geoViews[uid])  
+}
+
+function getFeatures(data) {
+    return data.features;
+}
+
+function getProperties(feature){
+    return JSON.parse(feature.properties.properties);
+}
+
+function strToValue(str) {
+    if(Date.parse(str)) {
+        return Date.parse(str);
+    }
+    else if (parseInt(str)){
+        return parseInt(str);
+    }
+    else {
+        return str;
+    }
+}
+
+function filterFeatures(data) {
+    if (filterString) {
+        //property == value
+        if(filterString.includes("==")) {
+            var items  = filterString.split("==");
+            var property = items[0].trim();
+            var str = items[1].trim();
+            var value = strToValue(str);
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty === value;
+            }
+        }
+        //property < value
+        else if(filterString.includes("<")) {
+            var items  = filterString.split("<");
+            var property = items[0].trim();
+            var str = items[1].trim();
+            var value = strToValue(str);
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty < value;
+            }
+        }
+        //property <= value
+        else if(filterString.includes("<=")) {
+            var items  = filterString.split("<=");
+            var property = items[0].trim();
+            var str = items[1].trim();
+            var value = strToValue(str);
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty <= value;
+            }
+        }
+        //property > value
+        else if(filterString.includes(">")) {
+            var items  = filterString.split(">");
+            var property = items[0].trim();
+            var str = items[1].trim();
+            var value = strToValue(str);
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty > value;
+            }
+        }
+        //property >= value
+        else if(filterString.includes(">=")) {
+            var items  = filterString.split(">=");
+            var property = items[0].trim();
+            var str = items[1].trim();
+            var value = strToValue(str);
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty >= value;
+            }
+        }
+
+        //property min,max
+        else if(filterString.includes(" ") && filterString.includes(",")) {
+            var items  = filterString.split(" ");
+            var property = items[0];
+            var range = items[1].split(',');
+            var min = strToValue(range[0].trim());
+            var max = strToValue(range[1].trim());
+            filterFunction = function(element) {
+                var elementProperty = strToValue(getProperties(element)[property]);
+                return elementProperty && elementProperty >= min && elementProperty <= max;
+            }
+        }
+        else {
+            return getFeatures(data);
+        }
+        return getFeatures(data).filter(filterFunction);
+    }
+    return getFeatures(data);
+
 }
 
 function constructPopup(feature, layer) {
