@@ -158,77 +158,11 @@ function strToValue(str) {
 
 function filterFeatures(data) {
     if (filterString) {
-        //property == value
-        if(filterString.includes("==")) {
-            var items  = filterString.split("==");
-            var property = items[0].trim();
-            var str = items[1].trim();
-            var value = strToValue(str);
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty === value;
-            }
-        }
-        //property < value
-        else if(filterString.includes("<")) {
-            var items  = filterString.split("<");
-            var property = items[0].trim();
-            var str = items[1].trim();
-            var value = strToValue(str);
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty < value;
-            }
-        }
-        //property <= value
-        else if(filterString.includes("<=")) {
-            var items  = filterString.split("<=");
-            var property = items[0].trim();
-            var str = items[1].trim();
-            var value = strToValue(str);
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty <= value;
-            }
-        }
-        //property > value
-        else if(filterString.includes(">")) {
-            var items  = filterString.split(">");
-            var property = items[0].trim();
-            var str = items[1].trim();
-            var value = strToValue(str);
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty > value;
-            }
-        }
-        //property >= value
-        else if(filterString.includes(">=")) {
-            var items  = filterString.split(">=");
-            var property = items[0].trim();
-            var str = items[1].trim();
-            var value = strToValue(str);
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty >= value;
-            }
-        }
-
-        //property min,max
-        else if(filterString.includes(" ") && filterString.includes(",")) {
-            var items  = filterString.split(" ");
-            var property = items[0];
-            var range = items[1].split(',');
-            var min = strToValue(range[0].trim());
-            var max = strToValue(range[1].trim());
-            filterFunction = function(element) {
-                var elementProperty = strToValue(getProperties(element)[property]);
-                return elementProperty && elementProperty >= min && elementProperty <= max;
-            }
-        }
-        else {
-            return getFeatures(data);
-        }
+        filterFunction = function(element) {
+            var f = getProperties(element);
+            var evaluation = eval(filterString);
+            return evaluation;
+        } 
         return getFeatures(data).filter(filterFunction);
     }
     return getFeatures(data);
