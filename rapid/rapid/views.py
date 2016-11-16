@@ -146,6 +146,9 @@ def geoviews(request):
 
         uid = data.create_geoview(geometry, descriptor, properties, public)
 
+        username = ApiToken.objects.get(uid=request.session.get('token')).descriptor
+        addGeofenceRule(username, uid)
+
         role = GeoViewRole(geo_view_id=uid, token=data.get_apitoken(), role=Role.OWNER)
         role.save()
 

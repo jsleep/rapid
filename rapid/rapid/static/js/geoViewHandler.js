@@ -57,7 +57,8 @@ function sendGeoView (geoView) {
 					drawButton.disabled = false;
 					sendButton.disabled = true;
 					ajaxCall(Request.TO_GEOVIEW+"?token="+localStorage.getItem('token'), function (response) {
-        				getGeoviews(response, false)});
+        				refreshGeoViews();
+        			});
 				}
     		}
 		}
@@ -73,14 +74,14 @@ function checkInput() {
     }
     else {
     	sendButton.disabled = false;
-    	return input.value;
+    	return $('#input').val();
     }
 }
 
 function addGeoView () {
 	
 	if (translateGeoView(drawnItems, desc)) {
-		var desc = input.value;
+		var desc = $('#input').val();
 		var geoView = translateGeoView(drawnItems, desc);
 		sendGeoView(geoView);
 	}
