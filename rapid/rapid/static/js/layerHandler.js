@@ -33,6 +33,81 @@ function parseResponse() {
     console.log("Data received")
 }
 
+function displayProperties(uid) {
+    layer_values = {};
+
+    for (var layer in layers[uid]._layers) {
+        var feature_properties = layers[uid]._layers[layer].feature.properties.properties;
+        for (var property in feature_properties) {
+            if(layer_values[property] === undefined ) {
+                layer_values[property] = [];
+            }
+            layer_values[property].push(feature_properties[property]);
+        }
+    }
+
+    var list = $(document.createElement('ul')).addClass("list-group");
+
+    for (var property in layer_values) {
+        layer_values[property] = layer_values[property].sort();
+
+        //remove duplicates
+        seen = {}
+        unique = []
+        for (var i = 0; i < layer_values[property].length; i++) {
+            if(layer_values[property][i] !== "" && seen[layer_values[property][i]] !== 1) {
+                unique.push(layer_values[property][i]);
+                seen[layer_values[property][i]] = 1;
+            }
+        }
+        layer_values[property] = unique;
+
+
+        if (isNaN(layer_values[property][0]) === false) { //numeric, show range
+            var li = '<li class="list-group-item">'+property;
+            var span = '<span style = "float:right;"> ' + layer_values[property][0] + ',' +
+             layer_values[property][layer_values[property].length - 1] + '</span></li>';
+             list.append(li+span);
+        }
+        else {
+            var li = $('<li class="list-group-item"></li>').text(property);
+            //non-numeric, create dropdown
+
+            var liDiv = $(document.createElement('div'));
+            var buttonDiv = $(document.createElement('div')).addClass('dropdown');
+            var button = $(document.createElement('button'));
+            button.attr('type', 'button');
+            button.attr('id', uid + '_vals');
+            button.attr('data-toggle', 'dropdown');
+            button.attr('aria-haspopup', 'true');
+            button.attr('aria-expanded', 'false');
+            button.css('float', 'right');
+            //button.css('padding', '1px 1px');
+            button.addClass('btn btn-default btn-xs dropdown-toggle');
+            button.text('Vals');
+            buttonDiv.append(button.append($(document.createElement('span')).addClass('caret')));
+
+            var dropdownUL = $(document.createElement('ul')).addClass('dropdown-menu');
+            dropdownUL.attr('aria-labelledby', uid + '_vals');
+            dropdownUL.css({'right': 0, 'left': 'inherit'});
+
+            for (var value in layer_values[property]) {
+                dropdownLI = $(document.createElement('li'));
+                dropdownLI.text(layer_values[property][value]);
+                dropdownUL.append(dropdownLI);
+            }
+
+            liDiv.append(buttonDiv.append(dropdownUL));
+            li.append(liDiv);
+            list.append(li);
+        }
+
+    }
+    $('#showProperties'+uid).append(list);
+
+
+}
+
 function addLayerToMap(uid)
 {
     var button = $(document.getElementById(uid.data + "_show"));
@@ -56,6 +131,7 @@ function addLayerToMap(uid)
                 jsonpCallback: 'parseResponse',
                 success: function(data) {
                     handleJson(data, uid.data);
+                    displayProperties(uid.data);
                 }
             });
         }
@@ -128,14 +204,30 @@ var refreshLayers = function () {
                             addToMapButton.addClass('btn btn-default btn-xs dropdown-toggle');
                             addToMapButton.text('Preview');
                             addToMapButton.click(uid, addLayerToMap);
+                            addToMapButton.attr("data-toggle","collapse");
+                            addToMapButton.attr("href","#showProperties"+uid);
+
+                        /*var propDiv = $(document.createElement('div')).addClass('dropdown').css({'display': 'inline-block', 'float': 'right'});
+                        var propButton = $(document.createElement('button'));
+                            propButton.attr('type','button');
+                            propButton.attr('id', uid + '_showProp');
+                            propButton.css('float', 'right');
+                            propButton.addClass('btn btn-default btn-xs dropdown-toggle');
+                            propButton.text('Prop');
+                            propButton.attr('enabled','false');*/
+
+                        propHtml = '<div id="showProperties'+uid+'" class="panel-collapse collapse"> \
+                                    </div>';
+                        //triggerHtml = '<a data-toggle="collapse" href="#collapse1">Collapsible panel</a>'
 
                         addToMapDiv.append(addToMapButton.append($(document.createElement('span'))));
+                        //propDiv.append(propButton.append($(document.createElement('span'))));
 					// 	var uid = existingLayers[i].uid;
 						liDiv.attr('id', uid + '_layer');
                         liDiv.css({'width': '100%', 'display': 'inline-block', 'margin-bottom': '5px'});
 						li.append(liDiv);
 						liDiv.append(descriptor).append(addToMapDiv).append(buttonDiv.append(dropdownUL));
-						$('#layerList').append(li);
+						$('#layerList').append(li).append(propHtml);
 					}
                     $('#layerList').append(document.createElement('li')).append(document.createElement('hr'));
 				}
